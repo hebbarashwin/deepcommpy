@@ -16,7 +16,7 @@ from tqdm import tqdm
 from .turbo import TurboCode
 from .tinyturbo import TinyTurbo
 from ..channels import Channel
-from .utils import snr_db2sigma, errors_ber, errors_bler, moving_average
+from ..utils import snr_db2sigma, errors_ber, errors_bler, moving_average
 
 def train_tinyturbo(turbocode, device, config = None, loaded_weights = None):
     """
@@ -151,7 +151,7 @@ def train_tinyturbo(turbocode, device, config = None, loaded_weights = None):
 
         return tinyturbo, training_losses, training_bers, step+1
 
-def test_tinyturbo(tinyturbo, turbocode, device, config = None, only_tt = False):
+def test_tinyturbo(turbocode, device, tinyturbo = None, config = None, only_tt = False):
     """
     Test function
     """

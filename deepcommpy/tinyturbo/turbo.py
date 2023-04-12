@@ -5,7 +5,6 @@ import os
 from .convcode import conv_encode, bcjr_decode, Trellis
 from .interleaver import Interleaver
 from .tinyturbo import TinyTurbo
-from .utils import dec2bitarray
 
 
 def get_qpp(f1, f2, block_len):

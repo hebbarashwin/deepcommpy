@@ -75,35 +75,6 @@ def errors_bler(y_true, y_pred):
     bler_err_rate = sum(np.sum(tp0,axis=1)>0)*1.0/(X_test.shape[0])
     return bler_err_rate
 
-def corrupt_signal(input_signal, sigma = 1.0, noise_type = 'awgn', vv =5.0, radar_power = 20.0, radar_prob = 5e-2):
-
-    data_shape = input_signal.shape  # input_signal has to be a numpy array.
-    assert noise_type in ['awgn', 'fading', 'radar', 't-dist'], "Invalid noise type"
-
-    if noise_type == 'awgn':
-        noise = sigma * torch.randn_like(input_signal) # Define noise
-        corrupted_signal = 2.0*input_signal-1.0 + noise
-
-    elif noise_type == 'fading':
-        fading_h = torch.sqrt(torch.randn_like(input_signal)**2 +  torch.randn_like(input_signal)**2)/np.sqrt(3.14/2.0)
-        noise = sigma * torch.randn_like(input_signal) # Define noise
-        corrupted_signal = fading_h *(2.0*input_signal-1.0) + noise
-
-    elif noise_type == 'radar':
-        add_pos     = np.random.choice([0.0, 1.0], data_shape,
-                                       p=[1 - radar_prob, radar_prob])
-
-        corrupted_signal = radar_power* np.random.standard_normal( size = data_shape ) * add_pos
-        noise = sigma * torch.randn_like(input_signal) +\
-                    torch.from_numpy(corrupted_signal).type(torch.FloatTensor).to(input_signal.device)
-        corrupted_signal = 2.0*input_signal-1.0 + noise
-
-    elif noise_type == 't-dist':
-        noise = sigma * np.sqrt((vv-2)/vv) *np.random.standard_t(vv, size = data_shape)
-        corrupted_signal = 2.0*input_signal-1.0 + torch.from_numpy(noise).type(torch.FloatTensor).to(input_signal.device)
-
-    return corrupted_signal
-
 def moving_average(a, n=3) :
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]

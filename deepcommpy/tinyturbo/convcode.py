@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from .utils import dec2bitarray, bitarray2dec
+from ..utils import dec2bitarray, bitarray2dec
 
 def max_star(metrics):
 
