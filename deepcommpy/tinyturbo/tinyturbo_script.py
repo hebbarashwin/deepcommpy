@@ -56,7 +56,7 @@ def train_tinyturbo(turbocode, device, config = None, loaded_weights = None):
         for step in range(config['num_steps']):
             start = time.time()
             message_bits = torch.randint(0, 2, (config['batch_size'], config['block_len']), dtype=torch.float).to(device)
-            coded = turbocode.turbo_encode(message_bits, puncture = config['puncture']).to(device)
+            coded = turbocode.encode(message_bits, puncture = config['puncture']).to(device)
             # noisy_coded = corrupt_signal(coded, sigma, noise_type, vv = config['vv'], radar_power = config['radar_power'], radar_prob = config['radar_prob'])
             noisy_coded = channel.corrupt_signal(2*coded-1, sigma, vv = config['vv'], radar_power = config['radar_power'], radar_prob = config['radar_prob'])
             if noise_type not in ['EPA', 'EVA', 'ETU', 'MIMO']:
@@ -177,7 +177,7 @@ def test_tinyturbo(turbocode, device, tinyturbo = None, config = None, only_tt =
     with torch.no_grad():
         for ii in range(num_batches):
             message_bits = torch.randint(0, 2, (config['test_batch_size'], config['block_len']), dtype=torch.float).to(device)
-            coded = turbocode.turbo_encode(message_bits, puncture = config['puncture']).to(device)
+            coded = turbocode.encode(message_bits, puncture = config['puncture']).to(device)
             # if  config['noise_type'] in ['EPA', 'EVA', 'ETU']: #run from MATLAB
             #     print("Using ", config['noise_type'], " channel")
             #     import matlab.engine
@@ -245,7 +245,7 @@ def test_tinyturbo(turbocode, device, tinyturbo = None, config = None, only_tt =
                         blers_ml[k] += bler_maxlog/num_batches
 
                     l_llrs, decoded_l = turbocode.turbo_decode(received_llrs, config['turbo_iters'],
-                                                method='log_MAP', puncture = config['puncture'])
+                                                method='MAP', puncture = config['puncture'])
                     ber_log = errors_ber(message_bits, decoded_l[:, :-turbocode.trellis1. total_memory])
                     bler_log = errors_bler(message_bits, decoded_l[:, :-turbocode.trellis1. total_memory])
 

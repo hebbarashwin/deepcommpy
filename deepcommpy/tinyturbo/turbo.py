@@ -70,7 +70,7 @@ class TurboCode():
         self.tinyturbo.load_state_dict(weights)
 
 
-    def turbo_encode(self, message_bits, puncture=False):
+    def encode(self, message_bits, puncture=False):
         """ Turbo Encoder.
         Encode Bits using a parallel concatenated rate-1/3
         turbo code consisting of two rate-1/2 systematic
@@ -169,6 +169,9 @@ class TurboCode():
             Decoded beliefs
         """
 
+        if method not in ['max_log_MAP', 'MAP']:
+            raise ValueError('Invalid method. Choose max_log_MAP or MAP')
+        
         coded = received_llrs[:, :-4*self.trellis1.total_memory]
         term = received_llrs[:, -4*self.trellis1.total_memory:]
 
@@ -204,18 +207,6 @@ class TurboCode():
         L_int_1 = L_int
 
         for iteration in range(number_iterations):
-            # [L_ext_1, decoded] = bcjr_decode(sys_llrs, non_sys_llrs1, self.trellis1, L_int_1, method=method)
-            #
-            # L_ext_1 = L_ext_1 - L_int_1 - sys_llr
-            # L_int_2 = interleaver.interleave(L_ext_1[:, :sys_stream.shape[1]])
-            # L_int_2 = torch.cat((L_int_2, torch.zeros_like(term_sys1)), -1)
-            #
-            # [L_ext_2, decoded] = bcjr_decode(sys_llrs_inter, non_sys_llrs2, self.trellis1, L_int_2, method=method)
-            #
-            # L_ext_2 = L_ext_2 - L_int_2
-            # L_int_1 = interleaver.deinterleave(L_ext_2[:, :sys_stream.shape[1]])
-            # L_int_1 = L_int_1 - sys_llr[:, :sys_stream.shape[1]]
-            # L_int_1 = torch.cat((L_int_1, torch.zeros_like(term_sys1)), -1)
 
             [L_ext_1, decoded] = bcjr_decode(sys_llrs, non_sys_llrs1, self.trellis1, L_int_1, method=method)
 
@@ -272,6 +263,8 @@ class TurboCode():
             Decoded beliefs
         """
 
+        if method not in ['max_log_MAP', 'MAP']:
+            raise ValueError('Invalid method. Choose max_log_MAP or MAP')
         if tinyturbo is None:
             tinyturbo = self.tinyturbo # use default weights
         tinyturbo.to(received_llrs.device)
