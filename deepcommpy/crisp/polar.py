@@ -1,7 +1,8 @@
 import numpy as np
 import torch
-
+import os 
 from ..utils import snr_db2sigma
+from .models import RNN_Model, convNet
 
 def min_sum_log_sum_exp(x, y):
 
@@ -31,7 +32,6 @@ class PolarCode:
             self.frozen_positions.sort()
 
             self.info_positions = np.array(list(set(self.frozen_positions) ^ set(np.arange(self.N))))
-            self.unsorted_info_positions = self.info_positions
             self.info_positions.sort()
         else:
             if rs is None:
@@ -47,8 +47,8 @@ class PolarCode:
                     rs = np.array([3, 2, 1, 0])
 
                 rs = np.array([256 ,255 ,252 ,254 ,248 ,224 ,240 ,192 ,128 ,253 ,244 ,251 ,250 ,239 ,238 ,247 ,246 ,223 ,222 ,232 ,216 ,236 ,220 ,188 ,208 ,184 ,191 ,190 ,176 ,127 ,126 ,124 ,120 ,249 ,245 ,243 ,242 ,160 ,231 ,230 ,237 ,235 ,234 ,112 ,228 ,221 ,219 ,218 ,212 ,215 ,214 ,189 ,187 ,96 ,186 ,207 ,206 ,183 ,182 ,204 ,180 ,200 ,64 ,175 ,174 ,172 ,125 ,123 ,122 ,119 ,159 ,118 ,158 ,168 ,241 ,116 ,111 ,233 ,156 ,110 ,229 ,227 ,217 ,108 ,213 ,152 ,226 ,95 ,211 ,94 ,205 ,185 ,104 ,210 ,203 ,181 ,92 ,144 ,202 ,179 ,199 ,173 ,178 ,63 ,198 ,121 ,171 ,88 ,62 ,117 ,170 ,196 ,157 ,167 ,60 ,115 ,155 ,109 ,166 ,80 ,114 ,154 ,107 ,56 ,225 ,151 ,164 ,106 ,93 ,150 ,209 ,103 ,91 ,143 ,201 ,102 ,48 ,148 ,177 ,90 ,142 ,197 ,87 ,100 ,61 ,169 ,195 ,140 ,86 ,59 ,32 ,165 ,194 ,113 ,79 ,58 ,153 ,84 ,136 ,55 ,163 ,78 ,105 ,149 ,162 ,54 ,76 ,101 ,47 ,147 ,89 ,52 ,141 ,99 ,46 ,146 ,72 ,85 ,139 ,98 ,31 ,44 ,193 ,138 ,57 ,83 ,30 ,135 ,77 ,40 ,82 ,134 ,161 ,28 ,53 ,75 ,132 ,24 ,51 ,74 ,45 ,145 ,71 ,50 ,16 ,97 ,70 ,43 ,137 ,68 ,42 ,29 ,39 ,81 ,27 ,133 ,38 ,26 ,36 ,131 ,23 ,73 ,22 ,130 ,49 ,15 ,20 ,69 ,14 ,12 ,67 ,41 ,8 ,66 ,37 ,25 ,35 ,34 ,21 ,129 ,19 ,13 ,18 ,11 ,10 ,7 ,65 ,6 ,4 ,33 ,17 ,9 ,5 ,3 ,2 ,1 ]) - 1
-                rs = rs[rs<self.N]
 
+                self.reliability_seq = rs
                 self.rs = self.reliability_seq[self.reliability_seq<self.N]
             else:
                 self.reliability_seq = rs
@@ -57,12 +57,9 @@ class PolarCode:
                 assert len(self.rs) == self.N
             # best K bits
             self.info_positions = self.rs[:self.K]
-            self.unsorted_info_positions = self.reliability_seq[self.reliability_seq<self.N][:self.K]
             self.info_positions.sort()
-            self.unsorted_info_positions=np.flip(self.unsorted_info_positions)
             # worst N-K bits
             self.frozen_positions = self.rs[self.K:]
-            self.unsorted_frozen_positions = self.rs[self.K:]
             self.frozen_positions.sort()
 
 
@@ -71,6 +68,33 @@ class PolarCode:
             8: torch.Tensor([1, 1, 1, 0, 1, 0, 1, 0, 1]).int(),
             16: torch.Tensor([1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]).int(),
                                     }
+            
+            # Init default CRISP networks if available.
+            models_path = os.path.join(os.path.dirname(__file__), 'models')
+            # check if folder model_path/rnn_n{N}_k{K} is available
+            if os.path.isdir(os.path.join(models_path, f'rnn_n{self.N}_k{self.K}')):
+                try:
+                    checkpoint_rnn = torch.load(os.path.join(models_path, f'rnn_n{self.N}_k{self.K}', 'model.pt'), map_location=torch.device('cpu'))
+                    rnn_config = checkpoint_rnn['config']
+                    self.rnn_net = RNN_Model(rnn_config)
+                    self.rnn_net.load_state_dict(checkpoint_rnn['model_state_dict'])
+                except:
+                    self.rnn_net = None
+            else:
+                self.rnn_net = None
+
+            # similar for cnn
+            if os.path.isdir(os.path.join(models_path, f'cnn_n{self.N}_k{self.K}')):
+                try:
+                    checkpoint_cnn = torch.load(os.path.join(models_path, f'cnn_n{self.N}_k{self.K}', 'model.pt'), map_location=torch.device('cpu'))
+                    cnn_config = checkpoint_cnn['args']
+                    self.cnn_net = convNet(cnn_config)
+                    self.cnn_net.load_state_dict(checkpoint_cnn['xformer'])
+                except:
+                    self.cnn_net = None
+            else:
+                self.cnn_net = None
+            
 
     def encode(self, message, custom_info_positions = None):
 
@@ -231,17 +255,16 @@ class PolarCode:
         
         if net is None:
             # load default if available 
-            pass
-
+            net = self.rnn_net
+        if net is None:
+            raise ValueError(f"Provide RNN net. Default net not available for Polar({self.N}, {self.K})")
+        net.to(y.device)
         onehot_fn = get_onehot
         iter_range = list(range(0, self.N))
         decoded = torch.ones(y.shape[0], self.N, device = y.device)
         net.eval()
         with torch.no_grad():
-            if net.y_depth == 0:
-                Fy = y
-            else:
-                Fy = net.get_Fy(y)
+            Fy = y
             hidden = torch.zeros((int(net.bidirectional) + 1)*net.num_rnn_layers, y.shape[0], net.feature_size, device = y.device)
             for ii, jj in enumerate(iter_range): # don't assume first bit is always frozen
                 if ii == 0:
@@ -256,34 +279,12 @@ class PolarCode:
     def crisp_cnn_decode(self, y, net=None):
 
         if net is None:
-            pass 
+            # load default if available 
+            net = self.cnn_net
+        if net is None:
+            raise ValueError(f"Provide CNN net. Default net not available for Polar({self.N}, {self.K})")
+        net.to(y.device)
         with torch.no_grad():
             decoded = net(y)
             return decoded[:, self.info_positions]
         
-
-# if __name__ == '__main__':
-#     n = int(np.log2(args.N))
-
-
-#     # computed for SNR = 0
-#     if n == 5:
-#         rs = np.array([31, 30, 29, 27, 23, 15, 28, 26, 25, 22, 21, 14, 19, 13, 11, 24,  7, 20, 18, 12, 17, 10,  9,  6,  5,  3, 16,  8,  4,  2,  1,  0])
-
-#     elif n == 4:
-#         rs = np.array([15, 14, 13, 11, 7, 12, 10, 9, 6, 5, 3, 8, 4, 2, 1, 0])
-#     elif n == 3:
-#         rs = np.array([7, 6, 5, 3, 4, 2, 1, 0])
-#     elif n == 2:
-#         rs = np.array([3, 2, 1, 0])
-
-#     rs = np.array([256 ,255 ,252 ,254 ,248 ,224 ,240 ,192 ,128 ,253 ,244 ,251 ,250 ,239 ,238 ,247 ,246 ,223 ,222 ,232 ,216 ,236 ,220 ,188 ,208 ,184 ,191 ,190 ,176 ,127 ,126 ,124 ,120 ,249 ,245 ,243 ,242 ,160 ,231 ,230 ,237 ,235 ,234 ,112 ,228 ,221 ,219 ,218 ,212 ,215 ,214 ,189 ,187 ,96 ,186 ,207 ,206 ,183 ,182 ,204 ,180 ,200 ,64 ,175 ,174 ,172 ,125 ,123 ,122 ,119 ,159 ,118 ,158 ,168 ,241 ,116 ,111 ,233 ,156 ,110 ,229 ,227 ,217 ,108 ,213 ,152 ,226 ,95 ,211 ,94 ,205 ,185 ,104 ,210 ,203 ,181 ,92 ,144 ,202 ,179 ,199 ,173 ,178 ,63 ,198 ,121 ,171 ,88 ,62 ,117 ,170 ,196 ,157 ,167 ,60 ,115 ,155 ,109 ,166 ,80 ,114 ,154 ,107 ,56 ,225 ,151 ,164 ,106 ,93 ,150 ,209 ,103 ,91 ,143 ,201 ,102 ,48 ,148 ,177 ,90 ,142 ,197 ,87 ,100 ,61 ,169 ,195 ,140 ,86 ,59 ,32 ,165 ,194 ,113 ,79 ,58 ,153 ,84 ,136 ,55 ,163 ,78 ,105 ,149 ,162 ,54 ,76 ,101 ,47 ,147 ,89 ,52 ,141 ,99 ,46 ,146 ,72 ,85 ,139 ,98 ,31 ,44 ,193 ,138 ,57 ,83 ,30 ,135 ,77 ,40 ,82 ,134 ,161 ,28 ,53 ,75 ,132 ,24 ,51 ,74 ,45 ,145 ,71 ,50 ,16 ,97 ,70 ,43 ,137 ,68 ,42 ,29 ,39 ,81 ,27 ,133 ,38 ,26 ,36 ,131 ,23 ,73 ,22 ,130 ,49 ,15 ,20 ,69 ,14 ,12 ,67 ,41 ,8 ,66 ,37 ,25 ,35 ,34 ,21 ,129 ,19 ,13 ,18 ,11 ,10 ,7 ,65 ,6 ,4 ,33 ,17 ,9 ,5 ,3 ,2 ,1 ]) - 1
-#     rs = rs[rs<args.N]
-
-#     ###############
-#     ### Polar code
-#     ##############
-
-#     ### Encoder
-
-#     polar = PolarCode(n, args.K, args, rs = rs)

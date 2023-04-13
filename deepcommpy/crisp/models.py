@@ -1,62 +1,33 @@
-import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import torch.utils.data
-
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR
-
-# from polar import *
-# from pac_code import *
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-MODEL = 'gpt'
-
 
 class RNN_Model(nn.Module):
-    def __init__(self, rnn_type, input_size, feature_size, output_size, num_rnn_layers, y_size, y_hidden_size, y_depth, activation = 'relu', dropout = 0., skip=False, out_linear_depth=1, y_output_size = None, bidirectional = False, use_layernorm = False):
+    def __init__(self, config):
         super(RNN_Model, self).__init__()
 
-        assert rnn_type in ['GRU', 'LSTM']
-        self.input_size  = input_size
-        self.activation = activation
-        self.feature_size = feature_size
-        self.output_size = output_size
-        self.skip = skip
+        assert config['rnn_type'] in ['GRU', 'LSTM'], 'rnn_type must be GRU or LSTM'
+        self.input_size = config['N']+1+int(config['onehot'])
+        self.activation = config['activation']
+        self.feature_size = config['rnn_feature_size']
+        self.output_size = 1
+        self.skip = config['use_skip']
 
-        self.num_rnn_layers = num_rnn_layers
-        self.bidirectional = bidirectional
-        self.rnn = getattr(nn, rnn_type)(self.input_size, self.feature_size, self.num_rnn_layers, bidirectional = self.bidirectional, batch_first = True)
-        self.rnn_type = rnn_type
-        self.dropout = dropout
-        self.drop = nn.Dropout(dropout)
+        self.num_rnn_layers = config['rnn_depth']
+        self.bidirectional = config['bidirectional']
+        self.rnn = getattr(nn, config['rnn_type'])(self.input_size, self.feature_size, self.num_rnn_layers, bidirectional = self.bidirectional, batch_first = True)
+        self.rnn_type = config['rnn_type']
+        self.dropout = config['dropout']
+        self.drop = nn.Dropout(config['dropout'])
 
-        self.y_depth = y_depth
-        self.y_size = y_size
-        self.y_hidden_size = y_hidden_size
-        self.out_linear_depth = out_linear_depth
-        self.y_output_size = (int(self.bidirectional) + 1)*self.num_rnn_layers*self.feature_size if y_output_size is None else y_output_size
-        if use_layernorm:
+        self.y_size = config['N']
+
+        self.out_linear_depth = config['out_linear_depth']
+        if config['use_layernorm']:
             self.layernorm = nn.LayerNorm(self.feature_size)
         else:
             self.layernorm = nn.Identity()
 
-        #try:
-        if self.y_hidden_size > 0 and self.y_depth > 0:
-            self.y_linears = nn.ModuleList([nn.Linear(self.y_size, self.y_hidden_size, bias=True)])
-            self.y_linears.extend([nn.Linear(self.y_hidden_size, self.y_hidden_size, bias=True) for ii in range(1, self.y_depth-1)])
-            if (not hasattr(self, 'skip')) or (not self.skip):
-                self.y_linears.append(nn.Linear(self.y_hidden_size, self.y_output_size, bias=True))
-            else:
-                self.y_linears.append(nn.Linear(self.y_hidden_size, self.y_output_size - self.y_size, bias=True))
-
-        #except:
-        #    pass
         if self.out_linear_depth == 1:
             self.linear = nn.Linear((int(self.bidirectional) + 1)*self.feature_size, self.output_size)
         else:
@@ -170,10 +141,8 @@ class convNet(nn.Module):
         
         
         output = self.layer_norm(self.dropout(self.layersFin(torch.flatten(input6,start_dim=1))))
-        logits = output.squeeze().unsqueeze(-1)
+        logits = output.squeeze()
         decoded_msg_bits = logits.sign()
-        output = torch.sigmoid(logits)
-        output = torch.cat((1-output,output),-1)
         return decoded_msg_bits
 
 
