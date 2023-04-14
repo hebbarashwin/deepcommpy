@@ -4,16 +4,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Channels &#8212; deepcommpy  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="canonical" href="../channels.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -41,6 +39,52 @@
 Custom channels can be defined by inheriting from the Channel class.</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="deepcommpy.channels.Channel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deepcommpy.channels.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">noise_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'awgn'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#deepcommpy.channels.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel class for adding noise to input signal</p>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h3>
+<dl class="simple">
+<dt>noise_type<span class="classifier">str</span></dt><dd><p>Type of noise to be added to input signal. Valid values are ‘awgn’, ‘fading’, ‘radar’, ‘t-dist’, ‘EPA’, ‘EVA’, ‘ETU’</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="deepcommpy.channels.Channel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">noise_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'awgn'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#deepcommpy.channels.Channel.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deepcommpy.channels.Channel.corrupt_signal">
+<span class="sig-name descname"><span class="pre">corrupt_signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radar_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radar_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#deepcommpy.channels.Channel.corrupt_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Corrupt input signal with noise</p>
+<section id="id1">
+<h4>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h4>
+<dl class="simple">
+<dt>input_signal<span class="classifier">torch.Tensor</span></dt><dd><p>Input signal to be corrupted</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>Standard deviation of noise</p>
+</dd>
+<dt>vv<span class="classifier">float (optional)</span></dt><dd><p>Degrees of freedom for t-distribution</p>
+</dd>
+<dt>radar_power<span class="classifier">float (optional)</span></dt><dd><p>Power of radar noise</p>
+</dd>
+<dt>radar_prob<span class="classifier">float  (optional)</span></dt><dd><p>Probability of radar noise</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h4>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h4>
+<dl class="simple">
+<dt>corrupted_signal<span class="classifier">torch.Tensor</span></dt><dd><p>Corrupted signal</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
 </section>
 </section>
 
@@ -108,8 +152,8 @@ Custom channels can be defined by inheriting from the Channel class.</p>
       &copy;2023, Ashwin Hebbar, Sravan Ankireddy.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.1.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="_sources/channels.rst.txt"

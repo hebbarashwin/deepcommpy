@@ -1,7 +1,8 @@
 CRISP Module
 ============
 This module provides an interface in Python to perform polar encoding, and decoding using Successive cancellation, as well as the CRISP-CNN and CRISP-RNN decoders.
-
+Based on the paper: ["CRISP: Curriculum based Sequential Neural Decoders for Polar Code Family
+"](https://arxiv.org/abs/2210.00313) (ICC 2023)
 
 Functions
 ---------
