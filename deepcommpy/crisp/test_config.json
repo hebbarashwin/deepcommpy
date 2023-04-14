@@ -1,0 +1,13 @@
+{
+    "N": 64,
+    "K": 22,
+    "test_size": 10000,
+    "test_batch_size": 10000,
+    "snr_range": [-3, -2, -1, 0, 1, 2, 3],
+    "noise_type": "awgn",
+    "vv": 5,
+    "radar_prob": 0.01,
+    "radar_power": 5.0,
+    "gpu": 0,
+    "id": null
+}

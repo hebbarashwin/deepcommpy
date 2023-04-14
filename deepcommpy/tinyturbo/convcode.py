@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from .utils import dec2bitarray, bitarray2dec
+from ..utils import dec2bitarray, bitarray2dec
 
 def max_star(metrics):
 
@@ -271,7 +271,7 @@ def conv_encode(message_bits, trellis, puncture_matrix = None):
         puncture_matrix = np.ones((trellis.k, trellis.n))
 
     num_states = pow(2, trellis.total_memory)
-    bit_array_states = torch.Tensor([dec2bitarray(ii, n) for ii in range(num_states)])
+    bit_array_states = torch.Tensor(np.array([dec2bitarray(ii, n) for ii in range(num_states)]))
     batch_size, number_message_bits = message_bits.shape
 
     # Initialize an array to contain the message bits plus the truncation zeros

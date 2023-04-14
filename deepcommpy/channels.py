@@ -9,12 +9,20 @@ def snr_sigma2db(sigma):
 
 
 class Channel:
+    """Channel class for adding noise to input signal
+    
+    Parameters
+    ----------
+    noise_type : str
+        Type of noise to be added to input signal. Valid values are 'awgn', 'fading', 'radar', 't-dist', 'EPA', 'EVA', 'ETU'
+        
+    """
     def __init__(self, noise_type='awgn'):
-        valid_noise_types = ['awgn', 'fading', 'radar', 't-dist', 'EPA', 'EVA', 'ETU', 'MIMO']
+        valid_noise_types = ['awgn', 'fading', 'radar', 't-dist', 'EPA', 'EVA', 'ETU']
         assert noise_type in valid_noise_types, "Invalid noise type"
         self.noise_type = noise_type
 
-        if  self.noise_type in ['EPA', 'EVA', 'ETU', 'MIMO']: #run from MATLAB
+        if  self.noise_type in ['EPA', 'EVA', 'ETU']: #run from MATLAB
             try:
                 assert self.is_matlab_available(), "MATLAB is not available"
                 assert self.is_matlab_engine_available(), "MATLAB Engine is not available"
@@ -78,8 +86,6 @@ class Channel:
         # s = eng.genpath('matlab_scripts')
         # eng.addpath(s, nargout=0)
 
-        # TO CHECK : INPUT TO MATLAB IS BPSK MODULATED ALREADY RIGHT?
-
         # calculate closest multiple to num_sym(179)
         num_sym = int(np.floor(input_signal.size(0)/179)) + 1
         code_len = input_signal.shape[-1]
@@ -91,36 +97,30 @@ class Channel:
         rx_llrs = np.array(rx_llrs)
         received_llrs = torch.from_numpy(np.transpose(rx_llrs))
         return received_llrs.to(input_signal.device)
-
-    # def mimo(self, input_signal, snr_range, device, args, turbo_encode, trellis1, trellis2, interleaver):
-    #     # Generate MIMO data using MATLAB
-
-    #     # print("Using ", args.noise_type, " channel")
-    #     # import matlab.engine
-    #     # eng = matlab.engine.start_matlab()
-    #     # s = eng.genpath('matlab_scripts')
-    #     # eng.addpath(s, nargout=0)
-
-    #     coded_mat = matlab.double(input_signal.numpy().tolist())
-    #     code_len = int((args.block_len*3)+4*(trellis1.total_memory))
-    #     num_blocks = 179
-    #     SNRs = matlab.double(snr_range)
-    #     num_tx = args.num_tx
-    #     num_rx = args.num_rx
-    #     max_num_tx = args.max_num_tx
-    #     max_num_rx = args.max_num_rx
-    #     num_codewords = int(args.test_size)
-    #     rx_llrs =  eng.generate_mimo_diversity_data (num_tx, num_rx, max_num_tx, max_num_rx, coded_mat, code_len, SNRs, num_codewords)
-    #     # convert to numpy
-    #     rx_llrs = np.array(rx_llrs)
-    #     received_llrs = torch.from_numpy(np.transpose(rx_llrs)).to(device)
-
-    #     # eng.quit()
-    #     return received_llrs
     
 
     def corrupt_signal(self, input_signal, sigma = 1.0, vv =5.0, radar_power = 20.0, radar_prob = 5e-2):
+        """Corrupt input signal with noise
 
+        Parameters
+        ----------
+        input_signal : torch.Tensor
+            Input signal to be corrupted
+        sigma : float
+            Standard deviation of noise
+        vv : float (optional)
+            Degrees of freedom for t-distribution
+        radar_power : float (optional)
+            Power of radar noise
+        radar_prob : float  (optional)
+            Probability of radar noise
+        
+        Returns
+        -------
+        corrupted_signal : torch.Tensor
+            Corrupted signal
+        """
+        
         if self.noise_type == 'awgn':
             return self.awgn(input_signal, sigma)
         elif self.noise_type == 'fading':
@@ -132,7 +132,3 @@ class Channel:
         elif self.noise_type in ['EPA', 'EVA', 'ETU']:
             snr = snr_sigma2db(sigma)
             return self.epa_eva_etu(input_signal, snr)
-        # elif self.noise_type == 'MIMO':
-        #     if not self.is_matlab_engine_available():
-        #         raise Exception("MATLAB Engine is not available. Cannot use MIMO noise type.")
-        #     return self.mimo(input_signal, snr_range, device, args, turbo_encode, trellis1, trellis2, interleaver)
