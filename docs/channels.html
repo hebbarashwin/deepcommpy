@@ -15,6 +15,7 @@
     <link rel="canonical" href="../channels.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="NAMS Module" href="nams.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -52,6 +53,34 @@ Custom channels can be defined by inheriting from the Channel class.</p>
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">noise_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'awgn'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#deepcommpy.channels.Channel.__init__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="deepcommpy.channels.Channel.corrupt_signal">
+<span class="sig-name descname"><span class="pre">corrupt_signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radar_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radar_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#deepcommpy.channels.Channel.corrupt_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Corrupt input signal with noise</p>
+<section id="id1">
+<h4>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h4>
+<dl class="simple">
+<dt>input_signal<span class="classifier">torch.Tensor</span></dt><dd><p>Input signal to be corrupted</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>Standard deviation of noise</p>
+</dd>
+<dt>vv<span class="classifier">float (optional)</span></dt><dd><p>Degrees of freedom for t-distribution</p>
+</dd>
+<dt>radar_power<span class="classifier">float (optional)</span></dt><dd><p>Power of radar noise</p>
+</dd>
+<dt>radar_prob<span class="classifier">float  (optional)</span></dt><dd><p>Probability of radar noise</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h4>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h4>
+<dl class="simple">
+<dt>corrupted_signal<span class="classifier">torch.Tensor</span></dt><dd><p>Corrupted signal</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
 </section>
 </dd></dl>
 
@@ -76,16 +105,21 @@ Custom channels can be defined by inheriting from the Channel class.</p>
 
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tinyturbo.html">TinyTurbo Module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crisp.html">CRISP Module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nams.html">NAMS Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Channels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="nams.html" title="previous chapter">NAMS Module</a></li>
   </ul></li>
 </ul>
 </div>
