@@ -13,7 +13,7 @@ Welcome to deepcommpy's documentation!
    tinyturbo
    crisp
    nams
-   channel
+   channels
 
 Indices and tables
 ==================
