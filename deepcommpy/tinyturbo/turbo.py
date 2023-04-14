@@ -15,6 +15,19 @@ def get_qpp(f1, f2, block_len):
 
 class TurboCode():
     def __init__(self, code = 'lte', block_len = 40, interleaver_type = 'qpp', interleaver_seed=0, puncture=False):
+        """ Turbo Code object.
+        Includes encoding and decoding functions.
+
+        Parameters
+        ----------
+        code : str
+            Options are 'lte' and '757'
+        block_len : int
+            Length of the block to be encoded.
+        interleaver_type : str
+            Options are 'qpp' and 'random'
+        interleaver_seed : int
+            Seed used to initialize the interleaver."""
 
         assert code in ['lte', '757'], "Supported codes are 'lte' and '757'"
         self.code = code
@@ -79,25 +92,14 @@ class TurboCode():
         ----------
         message_bits : 2D torch Tensor containing {0, 1} of shape (batch_size, M)
             Stream of bits to be turbo encoded.
-        self.trellis1 : self.trellis1 object
-            self.trellis1 representation of the
-            first code in the parallel concatenation.
-        self.trellis2 : self.trellis1 object
-            self.trellis1 representation of the
-            second code in the parallel concatenation.
-        interleaver : Interleaver object
-            Interleaver used in the turbo code.
         puncture: Bool
             Currently supports only puncturing pattern '110101'
         Returns
         -------
-        stream : torch Tensor of turbo encoded codewords, of shape (batch_size, 3*M + 4*memory)
-                where memory is the number of delay elements in the convolutional code, M is the message length.
-
+        stream : torch Tensor of turbo encoded codewords, of shape (batch_size, 3*M + 4*memory) where memory is the number of delay elements in the convolutional code, M is the message length.
                 First 3*M bits are [sys_1, non_sys1_1, non_sys2_1, . . . . sys_j, non_sys1_j, non_sys2_j, . . . sys_M, non_sys1_M, non_sys2_M]
                 Next 2*memory bits are termination bits of sys and non_sys1 : [sys_term_1, non_sys1_term_1, . . . . sys_term_j, non_sys1_term_j, . . . sys_term_M, non_sys1_term_M]
                 Next 2*memory bits are termination bits of sys_interleaved and non_sys2 : [sys_inter_term_1, non_sys2_term_1, . . . . sys_inter_term_j, non_sys2_term_j, . . . sys_inter_term_M, non_sys2_term_M]
-
             Encoded bit streams corresponding
             to the systematic output
             and the two non-systematic
@@ -151,8 +153,6 @@ class TurboCode():
             Received LLRs corresponding to the received Turbo encoded bits
         number_iterations: Int
             Number of iterations of BCJR algorithm
-        interleaver : Interleaver object
-            Interleaver used in the turbo code.
         L_int : intrinsic LLRs of shape (batch_size, 3*M + 4*memory)
             Intrinsic LLRs (prior). (Set to zeros if no prior)
         method : Turbo decoding method
@@ -228,7 +228,7 @@ class TurboCode():
         LLRs = L_ext + L_int_1 + sys_llr
         decoded_bits = (LLRs > 0).float()
 
-        return LLRs, decoded_bits
+        return LLRs[:, :-self.trellis1.total_memory], decoded_bits[:, :-self.trellis1.total_memory]
 
     def tinyturbo_decode(self, received_llrs, number_iterations, tinyturbo = None, L_int = None, method = 'max_log_MAP', puncture = False):
 
@@ -237,16 +237,13 @@ class TurboCode():
 
         Parameters
         ----------
-        tinyturbo : instance of decoder class
-            Contains normal and interleaved weights for TinyTurbo
         received_llrs : LLRs of shape (batch_size, 3*M + 4*memory)
             Received LLRs corresponding to the received Turbo encoded bits
-        trellis : Trellis object
-            Trellis representation of the convolutional code
         number_iterations: Int
             Number of iterations of BCJR algorithm
-        interleaver : Interleaver object
-            Interleaver used in the turbo code.
+        tinyturbo : instance of decoder class
+            Contains normal and interleaved weights for TinyTurbo
+            Defaults to weights from TinyTurbo paper
         L_int : intrinsic LLRs of shape (batch_size, 3*M + 4*memory)
             Intrinsic LLRs (prior). (Set to zeros if no prior)
         method : Turbo decoding method
@@ -259,7 +256,6 @@ class TurboCode():
         L_ext : torch Tensor of decoded LLRs, of shape (batch_size, M + memory)
 
         decoded_bits: L_ext > 0
-
             Decoded beliefs
         """
 
@@ -324,4 +320,4 @@ class TurboCode():
 
         decoded_bits = (LLRs > 0).float()
 
-        return LLRs, decoded_bits
+        return LLRs[:, :-self.trellis1.total_memory], decoded_bits[:, :-self.trellis1.total_memory]

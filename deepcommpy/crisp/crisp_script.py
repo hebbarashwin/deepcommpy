@@ -17,7 +17,22 @@ from ..channels import Channel
 from ..utils import snr_db2sigma, errors_ber, errors_bler
 
 def crisp_rnn_test(polar, device, net=None, config=None):
-
+    """Test example for CRISP-RNN.
+    
+    Parameters
+    ----------
+    polar : PolarCode
+        Polar code object.
+    device : torch.device
+        Device to use for computations.
+        Eg: torch.device('cuda:0') or torch.device('cpu')
+    net : CRISP_RNN, optional
+        CRISP-RNN model object.
+        If None, then default model is used.
+    config : dict, optional
+        Configuration dictionary.
+        Example config provided as `deepcommpy/crisp/test_config.json`.
+        """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     if config is None:
         with open(os.path.join(script_dir, 'test_config.json'), 'r') as f:
@@ -65,7 +80,23 @@ def crisp_rnn_test(polar, device, net=None, config=None):
     return bers_RNN_test, blers_RNN_test, bers_SC_test, blers_SC_test
 
 def crisp_cnn_test(polar, device, net=None, config=None):
+    """Test example for CRISP-CNN.
+    
+    Parameters
+    ----------
+    polar : PolarCode
+        Polar code object.
+    device : torch.device
+        Device to use for computations.
+        Eg: torch.device('cuda:0') or torch.device('cpu')
 
+    net : CRISP_CNN, optional
+        CRISP-CNN model object.
+        If None, default model is used.
+    config : dict, optional
+        Configuration dictionary.
+        Example config provided as `deepcommpy/crisp/test_config.json`.
+    """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     if config is None:
         with open(os.path.join(script_dir, 'test_config.json'), 'r') as f:

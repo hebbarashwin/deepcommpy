@@ -1,5 +1,5 @@
 TinyTurbo Module
-============
+=================
 This module provides an interface in Python to perform Turbo encoding, and decoding using the classical decoders, as well as the TinyTurbo decoder.
 
 

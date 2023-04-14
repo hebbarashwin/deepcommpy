@@ -3,7 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class RNN_Model(nn.Module):
+    """CRISP-GRU model class.
+    
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the model configuration.
+        Sample config provided in the provided sample models."""
     def __init__(self, config):
+        
         super(RNN_Model, self).__init__()
 
         assert config['rnn_type'] in ['GRU', 'LSTM'], 'rnn_type must be GRU or LSTM'
@@ -72,6 +80,13 @@ class RNN_Model(nn.Module):
     
 
 class convNet(nn.Module):
+    """CRISP-CNN model class.
+    
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the model configuration.
+        Sample config provided in the provided sample models."""
     def __init__(self,config):
         super(convNet,self).__init__()
         self.hidden_dim = config.embed_dim

@@ -12,7 +12,22 @@ def min_sum_log_sum_exp(x, y):
 class PolarCode:
 
     def __init__(self, N, K, F = None, rs = None, infty = 1000.):
+        """ Turbo Code object.
+        Includes encoding and decoding functions.
 
+        Parameters
+        ----------
+        N : int
+            Block length.
+        K : int
+            Message length.
+        F : list of ints (optional)
+            List of frozen bit positions.
+        rs : list of ints (optional)
+            Reliability sequence.
+        infty : float (optional)
+            Large number to use for infinity."""
+        
         assert (N>2 and N%2 == 0)
         self.N = N
         self.n = int(np.log2(N))
@@ -97,6 +112,16 @@ class PolarCode:
             
 
     def encode(self, message, custom_info_positions = None):
+        """
+        Encode a message using the polar code using the Plotkin method.
+
+        Parameters
+        ----------
+        message : torch.Tensor
+            The message to encode, shape (batch, k)
+        custom_info_positions : torch.Tensor (optional)
+            The positions of the information bits, shape (k). If None, the default info positions are used.
+        """
 
         # message shape is (batch, k)
         # BPSK convention : 0 -> +1, 1 -> -1
@@ -114,14 +139,6 @@ class PolarCode:
                 # [u v] encoded to [u xor(u,v)]
                 u = torch.cat((u[:, :i], u[:, i:i+num_bits].clone() * u[:, i+num_bits: i+2*num_bits], u[:, i+num_bits:]), dim=1)
         return u
-
-    # def channel(self, code, snr):
-    #     sigma = snr_db2sigma(snr)
-
-    #     noise = (sigma* torch.randn(code.shape, dtype = torch.float)).to(code.device)
-    #     r = code + noise
-
-    #     return r
 
     def define_partial_arrays(self, llrs):
         # Initialize arrays to store llrs and partial_sums useful to compute the partial successive cancellation process.
@@ -226,7 +243,23 @@ class PolarCode:
         partial_llrs[:, self.n] = u
         return partial_llrs
 
-    def sc_decode(self, corrupted_codewords, snr, use_gt = None):
+    def sc_decode(self, corrupted_codewords, snr):
+        """
+        Successive cancellation decoder for Polar codes.
+        
+        Parameters
+        ----------
+        corrupted_codewords : torch.Tensor
+            Corrupted codewords to be decoded. Shape: (batch_size, N)
+        snr : float
+            Signal to noise ratio in dB
+        
+        Returns
+        -------
+        decoded_bits : torch.Tensor
+            Decoded bits. Shape: (batch_size, K)
+        
+        """
 
         # step-wise implementation using updateLLR and updatePartialSums
         sigma = snr_db2sigma(snr)
@@ -239,16 +272,25 @@ class PolarCode:
         llr_array, partial_llrs = self.define_partial_arrays(llrs)
         for ii in range(self.N):
             llr_array , decoded_bits = self.updateLLR(ii, llr_array.clone(), partial_llrs, priors)
-            if use_gt is None:
-                u_hat[:, ii] = torch.sign(llr_array[:, 0, ii])
-            else:
-                u_hat[:, ii] = use_gt[:, ii]
+            u_hat[:, ii] = torch.sign(llr_array[:, 0, ii])
             partial_llrs = self.updatePartialSums(ii, u_hat, partial_llrs)
         decoded_bits = u_hat[:, self.info_positions]
         return llr_array[:, 0, :].clone(), decoded_bits
 
     def crisp_rnn_decode(self, y, net=None):
+        """Decode Polar codes using CRISP GRU.
 
+        Parameters
+        ----------
+        y : torch.Tensor
+            Received signal. Shape: (batch_size, N)
+        net : torch.nn.Module, optional
+            CRISP GRU net. If None, default net is used. Default: None
+            Default net is available for Polar(64, 22).
+            Default nets should be stored in `deepcommpy.crisp.models.rnn_n{N}_k{K}.pt`.
+            The checkpoint should have keys 'model_state_dict' and 'config'.
+
+        """
         def get_onehot(actions):
             inds = (0.5 + 0.5*actions).long()
             return torch.eye(2, device = inds.device)[inds].reshape(actions.shape[0], -1)
@@ -277,6 +319,19 @@ class PolarCode:
         return decoded[:, self.info_positions]
     
     def crisp_cnn_decode(self, y, net=None):
+        """Decode Polar codes using CRISP CNN.
+        
+        Parameters
+        ----------
+        y : torch.Tensor
+            Received signal. Shape: (batch_size, N)
+        net : torch.nn.Module, optional
+            CRISP CNN net. If None, default net is used. Default: None
+            Default net is available for Polar(64, 22).
+            Default nets should be stored in `deepcommpy.crisp.models.cnn_n{N}_k{K}.pt`.
+            The checkpoint should have keys 'model_state_dict' and 'config'.
+            
+            """
 
         if net is None:
             # load default if available 
