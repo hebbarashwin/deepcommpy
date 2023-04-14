@@ -33,7 +33,7 @@ Here's an example of how to use the `tinyturbo` module:
     snr_range = [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
     for snr in snr_range:
         sigma = snr_db2sigma(snr)
-        # add noise
+        # add noise 
         noisy_coded = channel.corrupt_signal(coded, sigma)
         received_llrs = 2*noisy_coded/sigma**2
 

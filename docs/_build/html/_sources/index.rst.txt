@@ -14,6 +14,7 @@ Welcome to deepcommpy's documentation!
    crisp
    nams
    channels
+   examples
 
 Indices and tables
 ==================
