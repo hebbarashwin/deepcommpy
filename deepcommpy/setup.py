@@ -17,6 +17,7 @@ setup(
     entry_points={
         'console_scripts': [
             'tinyturbo-train=deepcommpy.tinyturbo.tinyturbo:main',
+            'nams-train=deepcommpy.nams.nams:main',            
             # Add other entry points for crisp and nams if necessary
         ],
     },
