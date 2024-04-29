@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os 
 
 class Turbo_subnet(nn.Module):
     def __init__(self, block_len, init_type = 'ones', one_weight = False):
@@ -42,59 +43,69 @@ class TinyTurbo(nn.Module):
         self.normal = nn.ModuleList()
         self.interleaved = nn.ModuleList()
 
-        assert type in ['normal', 'normal_common', 'same_all', 'same_iteration', 'scale', 'scale_common', 'same_scale_iteration', 'same_scale', 'one_weight']
+        assert type in ['normal', 'normal_common', 'same_all', 'same_iteration', 'scale', 'scale_common', 'same_scale_iteration', 'same_scale', 'one_weight', 'default']
 
-        if type == 'normal':
+        if init_type == 'default' or 'type' == 'default':
+            # Load pretrained TinyTurbo weights.
             for ii in range(num_iter):
-                self.normal.append(Turbo_subnet(block_len, init_type))
-                self.interleaved.append(Turbo_subnet(block_len, init_type))
+                self.normal.append(Turbo_subnet(1, 'ones'))
+                self.interleaved.append(Turbo_subnet(1, 'ones'))
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            checkpoint = torch.load(os.path.join(script_dir, "Results", "tinyturbo", "models", "weights.pt"))
+            weights = checkpoint['weights']
+            self.load_state_dict(weights)
+        else:
+            if type == 'normal':
+                for ii in range(num_iter):
+                    self.normal.append(Turbo_subnet(block_len, init_type))
+                    self.interleaved.append(Turbo_subnet(block_len, init_type))
 
-        if type == 'normal_common':
-            for ii in range(num_iter):
+            if type == 'normal_common':
+                for ii in range(num_iter):
+                    net = Turbo_subnet(block_len, init_type)
+                    self.normal.append(net)
+                    self.interleaved.append(net)
+
+            elif type == 'same_all':
                 net = Turbo_subnet(block_len, init_type)
-                self.normal.append(net)
-                self.interleaved.append(net)
+                for ii in range(num_iter):
+                    self.normal.append(net)
+                    self.interleaved.append(net)
 
-        elif type == 'same_all':
-            net = Turbo_subnet(block_len, init_type)
-            for ii in range(num_iter):
-                self.normal.append(net)
-                self.interleaved.append(net)
+            elif type == 'same_iteration':
+                normal_net = Turbo_subnet(block_len, init_type)
+                interleaved_net = Turbo_subnet(block_len, init_type)
 
-        elif type == 'same_iteration':
-            normal_net = Turbo_subnet(block_len, init_type)
-            interleaved_net = Turbo_subnet(block_len, init_type)
+                for ii in range(num_iter):
+                    self.normal.append(normal_net)
+                    self.interleaved.append(interleaved_net)
 
-            for ii in range(num_iter):
-                self.normal.append(normal_net)
-                self.interleaved.append(interleaved_net)
+            elif type == 'scale':
+                for ii in range(num_iter):
+                    self.normal.append(Turbo_subnet(1, init_type))
+                    self.interleaved.append(Turbo_subnet(1, init_type))
 
-        elif type == 'scale':
-            for ii in range(num_iter):
-                self.normal.append(Turbo_subnet(1, init_type))
-                self.interleaved.append(Turbo_subnet(1, init_type))
+            elif type == 'scale_common':
+                for ii in range(num_iter):
+                    net = Turbo_subnet(1, init_type)
+                    self.normal.append(net)
+                    self.interleaved.append(net)
 
-        elif type == 'scale_common':
-            for ii in range(num_iter):
+            elif type == 'same_scale':
                 net = Turbo_subnet(1, init_type)
-                self.normal.append(net)
-                self.interleaved.append(net)
+                for ii in range(num_iter):
+                    self.normal.append(net)
+                    self.interleaved.append(net)
 
-        elif type == 'same_scale':
-            net = Turbo_subnet(1, init_type)
-            for ii in range(num_iter):
-                self.normal.append(net)
-                self.interleaved.append(net)
+            elif type == 'same_scale_iteration':
+                net_normal = Turbo_subnet(1, init_type)
+                net_interleaved = Turbo_subnet(1, init_type)
+                for ii in range(num_iter):
+                    self.normal.append(net_normal)
+                    self.interleaved.append(net_interleaved)
 
-        elif type == 'same_scale_iteration':
-            net_normal = Turbo_subnet(1, init_type)
-            net_interleaved = Turbo_subnet(1, init_type)
-            for ii in range(num_iter):
-                self.normal.append(net_normal)
-                self.interleaved.append(net_interleaved)
-
-        elif type == 'one_weight':
-            net = Turbo_subnet(1, init_type, one_weight = True)
-            for ii in range(num_iter):
-                self.normal.append(net)
-                self.interleaved.append(net)
+            elif type == 'one_weight':
+                net = Turbo_subnet(1, init_type, one_weight = True)
+                for ii in range(num_iter):
+                    self.normal.append(net)
+                    self.interleaved.append(net)

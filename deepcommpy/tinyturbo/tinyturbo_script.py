@@ -176,7 +176,7 @@ def train_tinyturbo(turbocode, device, config = None, loaded_weights = None):
 
         return tinyturbo, training_losses, training_bers, step+1
 
-def test_tinyturbo(turbocode, device, tinyturbo = None, config = None):
+def test_tinyturbo(turbocode, device, tinyturbo = None, config = None, only_tt = False):
     """
     Test TinyTurbo on a test set
 
